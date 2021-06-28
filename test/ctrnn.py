@@ -31,11 +31,17 @@ class Tests(unittest.TestCase):
         b = 0
         range_a = Range(1, 0)
         range_b = Range(1, 0)
-        for _ in range(1000):
+        iterations = 5000
+        for _ in range(iterations):
             v = ctrnn.step(0.1, v)
             o = ctrnn.get_output(v)
             a += o[0]
             b += o[1]
             range_a.set_clamp(o[0])
             range_b.set_clamp(o[1])
-        print(a / 1000, b / 1000, range_a, range_b, sep="\n")
+        self.assertAlmostEqual(a / iterations, 0.5, 2)
+        self.assertAlmostEqual(b / iterations, 0.5, 2)
+        self.assertLess(range_a.max, 0.83)
+        self.assertLess(range_b.max, 0.83)
+        self.assertGreater(range_a.min, 0.17)
+        self.assertGreater(range_b.min, 0.17)
