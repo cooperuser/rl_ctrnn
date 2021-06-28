@@ -1,22 +1,12 @@
 from typing_extensions import TypeAlias
 import numpy as np
 
+from .ranges import Range, CtrnnRanges
+
 Array: TypeAlias = np.ndarray
 
 def sigmoid(z: Array) -> Array:
     return 1.0 / (1 + np.exp(-z))
-
-class Range(object):
-    def __init__(self, min: float, max: float):
-        self.min = min
-        self.max = max
-
-    def set_clamp(self, value: float):
-        self.min = min(self.min, value)
-        self.max = max(self.max, value)
-
-    def __repr__(self):
-        return f"R<{self.min} {self.max}>"
 
 class Ctrnn(object):
     def __init__(self, size: int = 2):
@@ -42,13 +32,35 @@ class Ctrnn(object):
     def set_weight(self, pre: int, post: int, weight: float):
         self.weights[pre][post] = weight
 
-    def randomize(self, weights: Range, biases: Range, t_c: Range, seed=None):
+    def randomize(self, ranges: CtrnnRanges, seed=None):
+        if seed != None:
+            np.random.seed(seed)
+        self.weights = ranges.get_weights(self.size)
+        self.biases = ranges.get_biases(self.size)
+        self.time_constants = ranges.get_time_constants(self.size)
+        self._inv_time_constants = 1.0 / self.time_constants
+
+    @DeprecationWarning
+    def randomize_custom(
+        self,
+        weights: Range = None,
+        biases: Range = None,
+        time_constants: Range = None,
+        seed=None
+    ):
         if seed != None:
             np.random.seed(seed)
         s = self.size
-        self.weights = np.random.uniform(weights.min, weights.max, size=(s, s))
-        self.biases = np.random.uniform(biases.min, biases.max, size=s)
-        self.time_constants = np.random.uniform(t_c.min, t_c.max, size=s)
+        if weights != None:
+            self.weights = np.random.uniform(
+                weights.min, weights.max, size=(s, s))
+        if biases != None:
+            self.biases = np.random.uniform(
+                biases.min, biases.max, size=s)
+        if time_constants != None:
+            self.time_constants = np.random.uniform(
+                time_constants.min, time_constants.max, size=s)
+            self._inv_time_constants = 1.0 / self.time_constants
 
     def step(self, dt: float, voltages: Array, inputs: Array=None) -> Array:
         inputs = inputs if inputs != None else np.zeros(self.size)
