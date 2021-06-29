@@ -1,4 +1,5 @@
 import numpy as np
+import wandb
 from rl_ctrnn.ranges import Range
 from . import Evaluator, Report
 
@@ -12,6 +13,8 @@ class OscillatorReport(Report):
 class Oscillator(Evaluator):
     def pre_transient(self, dt: float, step: int):
         self.voltages = self.ctrnn.make_instance()
+        self.report = OscillatorReport()
+        self.fitness = 0
 
     def step_transient(self, dt: float, step: int):
         self.voltages = self.ctrnn.step(dt, self.voltages)

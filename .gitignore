@@ -136,3 +136,6 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Weights and Biases data directory
+wandb/
