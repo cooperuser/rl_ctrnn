@@ -10,8 +10,8 @@ def rand(n: float = 1):
 
 class Tests(unittest.TestCase):
     def test_known(self):
-        for i in range(45):
-            wandb.init(entity="ampersand", project="boogaloo")
+        for i in range(1):
+            wandb.init(entity="ampersand", project="beep")
             ctrnn = Ctrnn(2)
             ctrnn.set_bias(0, -2.75 + rand(0.05))
             ctrnn.set_bias(1, -1.75 + rand(0.05))

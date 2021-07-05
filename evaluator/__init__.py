@@ -1,3 +1,4 @@
+from typing import Dict
 from rl_ctrnn.ctrnn import Ctrnn
 
 class Report(object):
@@ -47,3 +48,6 @@ class Evaluator(object):
 
     def generate_report(self) -> Report:
         return Report()
+
+    def get_log(self) -> Dict:
+        return {}

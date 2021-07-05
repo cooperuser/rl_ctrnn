@@ -2,6 +2,7 @@ from typing_extensions import TypeAlias
 import numpy as np
 
 from .ranges import Range, CtrnnRanges
+from rl_ctrnn import ranges
 
 Array: TypeAlias = np.ndarray
 
@@ -18,6 +19,7 @@ class Ctrnn(object):
         self.time_constants = np.ones(self.size)
         self._inv_time_constants = 1.0 / self.time_constants
         self.weights = np.zeros((self.size, self.size))
+        self.ranges = CtrnnRanges()
 
     def make_instance(self) -> Array:
         return np.zeros(self.size)
@@ -30,15 +32,27 @@ class Ctrnn(object):
         self._inv_time_constants[neuron] = 1.0 / self.time_constants[neuron]
 
     def set_weight(self, pre: int, post: int, weight: float):
-        self.weights[pre][post] = weight
+        self.weights[pre][post] = min(max(weight, self.ranges.weights.min), self.ranges.weights.max)
 
     def randomize(self, ranges: CtrnnRanges, seed=None):
+        self.ranges = ranges
         if seed != None:
             np.random.seed(seed)
         self.weights = ranges.get_weights(self.size)
         self.biases = ranges.get_biases(self.size)
         self.time_constants = ranges.get_time_constants(self.size)
         self._inv_time_constants = 1.0 / self.time_constants
+
+    def randomize_biases(self, range: Range = Range(-16, 16)):
+        self.biases = np.random.uniform(range.min, range.max, size=self.size)
+
+    def randomize_time_constants(self, range: Range = Range(0.5, 10)):
+        self.time_constants = np.random.uniform(
+            range.min, range.max, size=self.size)
+
+    def randomize_weights(self, range: Range = Range(-16, 16)):
+        size = (self.size, self.size)
+        self.weights = np.random.uniform(range.min, range.max, size=size)
 
     @DeprecationWarning
     def randomize_custom(
