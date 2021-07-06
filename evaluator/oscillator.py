@@ -35,7 +35,7 @@ class Oscillator(Evaluator):
         self.voltages = self.ctrnn.step(dt, self.voltages)
         outputs = self.ctrnn.get_output(self.voltages)
         self.fitness += np.sum(abs(outputs + -self.last) / dt)
-        beers = sum(map(lambda x: x.max - x.min,self.report.ranges))
+        beers = sum(map(lambda x: x.max - x.min, self.report.ranges))
         if beers > self.beers_metric:
             self.beers_metric = beers
         self.last = outputs

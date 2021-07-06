@@ -1,6 +1,8 @@
 from multiprocessing.context import Process
 from evaluator.oscillator import Oscillator
 from typing import Type, List
+from random import randint
+import uuid
 
 import wandb
 
@@ -31,15 +33,16 @@ def voltage_to_json(voltages: Array):
         data[ALPHABET[i]] = voltages[i]
     return data
 
-def random_sample():
+def random_sample(seed: int, hexcode: str):
     ranges = CtrnnRanges()
     ranges.set_time_constant_range(1, 1)
     ctrnn = Ctrnn()
-    ctrnn.randomize(ranges)
+    ctrnn.randomize(ranges, seed)
     eval = Oscillator(ctrnn, time_step=0.01)
     wandb.init(entity="ampersand", project="domain", config={
         "group": "random_sampler_0",
-        "ctrnn": ctrnn_to_json(ctrnn)
+        "ctrnn": ctrnn_to_json(ctrnn),
+        "seed": hexcode
     })
     for _ in range(eval._transient_steps):
         eval._step()
@@ -56,12 +59,15 @@ def random_sample():
     wandb.finish()
 
 if __name__ == "__main__":
-    cycles = 100
-    thread_count = 8
+    cycles = 1
+    thread_count = 10
     for cycle in range(cycles):
         threads: List[Process] = []
         for t in range(thread_count):
-            threads.append(Process(target=random_sample, args=()))
+            seed = randint(0, 16**8)
+            hexcode = hex(seed)[2:];
+            hexcode = '0' * (8 - len(hexcode)) + hexcode
+            threads.append(Process(target=random_sample, args=(seed, hexcode)))
         for _, p in enumerate(threads):
             p.start()
         for _, p in enumerate(threads):
