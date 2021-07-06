@@ -1,5 +1,6 @@
+from multiprocessing.context import Process
 from evaluator.oscillator import Oscillator
-from typing import Dict, Type, List
+from typing import Type, List
 
 import wandb
 
@@ -30,33 +31,38 @@ def voltage_to_json(voltages: Array):
         data[ALPHABET[i]] = voltages[i]
     return data
 
-if __name__ == "__main__":
+def random_sample():
     ranges = CtrnnRanges()
     ranges.set_time_constant_range(1, 1)
     ctrnn = Ctrnn()
-    for n in range(24000):
-        print(24000 - n)
-        ctrnn.randomize(ranges)
-        eval = Oscillator(ctrnn, time_step=0.01)
-        wandb.init(entity="ampersand", project="domain", config={
-            "group": "random_sampler_0",
-            "ctrnn": ctrnn_to_json(ctrnn)
+    ctrnn.randomize(ranges)
+    eval = Oscillator(ctrnn, time_step=0.01)
+    wandb.init(entity="ampersand", project="domain", config={
+        "group": "random_sampler_0",
+        "ctrnn": ctrnn_to_json(ctrnn)
+    })
+    for _ in range(eval._transient_steps):
+        eval._step()
+        wandb.log({
+            "neurons": voltage_to_json(ctrnn.get_output(eval.voltages))
         })
-        for i in range(eval._transient_steps):
-            eval._step()
-            wandb.log({
-                "neurons": voltage_to_json(ctrnn.get_output(eval.voltages))
-            })
-        for i in range(eval._evaluation_steps):
-            eval._step()
-            wandb.log({
-                "neurons": voltage_to_json(ctrnn.get_output(eval.voltages)),
-                "fitness": eval.fitness / eval._evaluation_steps,
-                "beers_metric": eval.beers_metric
-            })
+    for _ in range(eval._evaluation_steps):
+        eval._step()
+        wandb.log({
+            "neurons": voltage_to_json(ctrnn.get_output(eval.voltages)),
+            "fitness": eval.fitness / eval._evaluation_steps,
+            "beers_metric": eval.beers_metric
+        })
+    wandb.finish()
 
-        wandb.finish()
-    # r.start()
-    # for _ in range(10):
-    #     r.evaluate()
-    # r.finish()
+if __name__ == "__main__":
+    cycles = 100
+    thread_count = 8
+    for cycle in range(cycles):
+        threads: List[Process] = []
+        for t in range(thread_count):
+            threads.append(Process(target=random_sample, args=()))
+        for _, p in enumerate(threads):
+            p.start()
+        for _, p in enumerate(threads):
+            p.join()
