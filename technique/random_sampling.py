@@ -1,10 +1,8 @@
-from multiprocessing.context import Process
+from multiprocessing import Process
 from evaluator.oscillator import Oscillator
 from typing import Type, List
 from random import randint
-import uuid
-
-import wandb
+import sys, wandb
 
 from rl_ctrnn.ctrnn import Array, Ctrnn
 from rl_ctrnn.ranges import CtrnnRanges
@@ -33,14 +31,13 @@ def voltage_to_json(voltages: Array):
         data[ALPHABET[i]] = voltages[i]
     return data
 
-def random_sample(seed: int, hexcode: str):
+def random_sample(seed: int, hexcode: str, group: str):
     ranges = CtrnnRanges()
     ranges.set_time_constant_range(1, 1)
     ctrnn = Ctrnn()
     ctrnn.randomize(ranges, seed)
     eval = Oscillator(ctrnn, time_step=0.01)
-    wandb.init(entity="ampersand", project="domain", config={
-        "group": "random_sampler_0",
+    wandb.init(entity="ampersand", project="domain", group=group, config={
         "ctrnn": ctrnn_to_json(ctrnn),
         "seed": hexcode
     })
@@ -59,7 +56,8 @@ def random_sample(seed: int, hexcode: str):
     wandb.finish()
 
 if __name__ == "__main__":
-    cycles = 1
+    group = sys.argv[1] or "random_sampler"
+    cycles = 100
     thread_count = 10
     for cycle in range(cycles):
         threads: List[Process] = []
@@ -67,7 +65,8 @@ if __name__ == "__main__":
             seed = randint(0, 16**8)
             hexcode = hex(seed)[2:];
             hexcode = '0' * (8 - len(hexcode)) + hexcode
-            threads.append(Process(target=random_sample, args=(seed, hexcode)))
+            p = Process(target=random_sample, args=(seed, hexcode, group))
+            threads.append(p)
         for _, p in enumerate(threads):
             p.start()
         for _, p in enumerate(threads):
