@@ -1,5 +1,4 @@
 from random import randint
-from typing import List
 
 import wandb
 from util.run import Run

@@ -1,4 +1,3 @@
-# from util.run import Run
 from evaluator.oscillator import Oscillator
 from typing import List
 from util.run import Run
@@ -19,7 +18,7 @@ def old_to_new(c) -> dict:
     }
 
 
-def hill_climber(run_id: str):
+def helper():
     api = wandb.Api()
     runs: List[Run] = api.runs(
         "ampersand/random_sampler",
@@ -48,4 +47,4 @@ def hill_climber(run_id: str):
 
 
 if __name__ == "__main__":
-    hill_climber("w5i8u8qy")
+    helper()
