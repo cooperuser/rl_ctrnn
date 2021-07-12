@@ -1,53 +1,68 @@
-from typing import Dict
-from rl_ctrnn.ctrnn import Ctrnn
+from typing_extensions import TypeAlias
+from rl_ctrnn.ctrnn import Array, Ctrnn
+from rl_ctrnn.ranges import CtrnnRanges
+from typing import List, Tuple
 
-class Report(object):
-    def __repr__(self):
-        return '\n'.join([f"'{k}'\t\t{v}" for k, v in self.__dict__.items()])
+Change: TypeAlias = dict
+Evaluation: TypeAlias = List[Tuple[int, Change]]
+
 
 class Evaluator(object):
-    def __init__(
-        self,
-        ctrnn: Ctrnn,
-        transient_steps: int = 2500,
-        evaluation_steps: int = 500,
-        time_step: float = 0.1,
-    ):
+    def __init__(self, ctrnn: Ctrnn):
+        self._step = 0
+        self._changes: Evaluation = []
+
+        self.dt = 0.01
         self.ctrnn = ctrnn
-        self._transient_steps = transient_steps
-        self._evaluation_steps = evaluation_steps
-        self._time_step = time_step
-        self._frame = 0
+        self.voltages = self.ctrnn.make_instance()
 
-    def _step(self):
-        step = self._frame - self._transient_steps;
-
-        if self._frame == 0:
-            self.pre_transient(self._time_step, 0)
-        elif self._frame == self._transient_steps:
-            self.pre_evaluation(self._time_step, 0)
-
-        if self._frame < self._transient_steps:
-            self.step_transient(self._time_step, self._frame)
-        elif step < self._evaluation_steps:
-            self.step_evaluation(self._time_step, step)
-
-        self._frame += 1
-
-    def pre_transient(self, dt: float, step: int):
+    def setup(self):
         pass
 
-    def step_transient(self, dt: float, step: int):
-        pass
+    def setup_transient(self):
+        self.setup()
 
-    def pre_evaluation(self, dt: float, step: int):
-        pass
+    def setup_evaluation(self):
+        self.setup()
 
-    def step_evaluation(self, dt: float, step: int):
-        pass
+    def step(self) -> Array:
+        self.voltages = self.ctrnn.step(self.dt, self.voltages)
+        return self.ctrnn.get_output(self.voltages)
 
-    def generate_report(self) -> Report:
-        return Report()
+    def step_transient(self) -> Array:
+        return self.step()
 
-    def get_log(self) -> Dict:
+    def step_evaluation(self) -> Array:
+        return self.step()
+
+    def grade_transient(self, step: int) -> Change:
         return {}
+
+    def grade_evaluation(self, step: int) -> Change:
+        return {}
+
+    def _track_change(self, change: Change, phase: int = 0):
+        if len(change) == 0:
+            return
+        # change["phase"] = phase
+        # if phase == 0 and self._step % 10 != 0:
+        #     return
+        # if phase == 1 and self._step % 5 != 0:
+        #     return
+        self._changes.append((self._step, change))
+
+    def run(self) -> Evaluation:
+        """Measure the network's performance for analysis"""
+        self.setup_transient()
+        for self._step in range(0, 2500):
+            self.step_transient()
+            change = self.grade_transient(self._step)
+            self._track_change(change, 0)
+
+        self.setup_evaluation()
+        for self._step in range(2500, 3000):
+            self.step_evaluation()
+            change = self.grade_evaluation(self._step)
+            self._track_change(change, 1)
+
+        return self._changes
