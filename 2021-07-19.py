@@ -2,10 +2,11 @@ from job.walker import Walker
 from job.climber import Climber
 from rl_ctrnn.ctrnn import Ctrnn
 from multiprocessing import Process
+from random import randint
 
 PROJECT = "mutation-sizes"
-MUTATION_SIZES = [0.01, 0.05, 0.1, 0.2, 0.3]
-GROUP = "a"
+MUTATION_SIZE = 0.05
+GROUP = "b"
 ITERATIONS = 1000
 CTRNN = {
     "time_constants": {0: 1.0, 1: 1.0},
@@ -17,14 +18,15 @@ CTRNN = {
 }
 
 
-def main(seed: int):
+def main(id: int):
     ctrnn = Ctrnn.from_dict(CTRNN)
-    for mut in MUTATION_SIZES:
-        c = Climber(PROJECT, GROUP, ctrnn, seed, mut)
+    seed = 20 * (id + 1)
+    for i in range(10):
+        c = Climber(PROJECT, GROUP, ctrnn, seed + 2 * i, MUTATION_SIZE)
         for _ in range(ITERATIONS):
             c.iter()
         c.run.finish()
-        w = Walker(PROJECT, GROUP, ctrnn, seed, mut)
+        w = Walker(PROJECT, GROUP, ctrnn, seed + 2 * i + 1, MUTATION_SIZE)
         for _ in range(ITERATIONS):
             w.iter()
         w.run.finish()
