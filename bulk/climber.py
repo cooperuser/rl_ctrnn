@@ -16,7 +16,7 @@ class Pair:
 
 
 class Climber(object):
-    def __init__(self, id: str, group: str = None):
+    def __init__(self, id: str, group: str = None, project: str = "test"):
         self.id = id
         self.group = group
         self.attempts: List[Pair] = []
@@ -24,7 +24,7 @@ class Climber(object):
         self.best = 0
 
         self.run: Run = wandb.init(
-            project="rl_ctrnn_test",
+            project=project,
             group=self.group,
             job_type="climber",
             config={"progenitor": self.id},

@@ -1,28 +1,30 @@
 from multiprocessing import Process
 
-from bulk.walker import Walker
-from bulk.climber import Climber
+from .walker import Walker
+from .climber import Climber
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+PROJECT = "mutation-sizes"
+ITERATIONS = 100
 
 
 def a(id, iterations: int, group: str):
-    c = Climber(id, group)
+    c = Climber(id, group, PROJECT)
     for _ in range(iterations):
         c.iter()
     c.run.finish()
 
 
 def b(id, iterations: int, group: str):
-    w = Walker(id, group)
+    w = Walker(id, group, PROJECT)
     for _ in range(iterations):
         w.iter()
     w.run.finish()
 
 
 def double(id: str, index: int):
-    a(id, 2500, ALPHABET[index])
-    b(id, 2500, ALPHABET[index])
+    a(id, ITERATIONS, ALPHABET[index])
+    b(id, ITERATIONS, ALPHABET[index])
 
 
 if __name__ == "__main__":
