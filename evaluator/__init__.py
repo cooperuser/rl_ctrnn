@@ -1,20 +1,20 @@
 from typing_extensions import TypeAlias
 from rl_ctrnn.ctrnn import Array, Ctrnn
-from rl_ctrnn.ranges import CtrnnRanges
 from typing import List, Tuple
 
 Change: TypeAlias = dict
-Evaluation: TypeAlias = List[Tuple[int, Change]]
+Evaluation: TypeAlias = List[Tuple[float, Change]]
 
 
 class Evaluator(object):
-    def __init__(self, ctrnn: Ctrnn):
-        self._step = 0
+    def __init__(self, ctrnn: Ctrnn, durations: Tuple[int, int] = (25, 5)):
+        self._time = 0.0
         self._changes: Evaluation = []
 
-        self.dt = 0.01
+        self.dt = 0.05
         self.ctrnn = ctrnn
         self.voltages = self.ctrnn.make_instance()
+        self.durations = durations
 
     def setup(self):
         pass
@@ -35,34 +35,56 @@ class Evaluator(object):
     def step_evaluation(self) -> Array:
         return self.step()
 
-    def grade_transient(self, step: int) -> Change:
+    def grade_transient(self) -> Change:
         return {}
 
-    def grade_evaluation(self, step: int) -> Change:
+    def grade_evaluation(self) -> Change:
         return {}
 
-    def _track_change(self, change: Change, phase: int = 0):
+    def _track_change(self, change: Change):
         if len(change) == 0:
             return
-        # change["phase"] = phase
-        # if phase == 0 and self._step % 10 != 0:
-        #     return
-        # if phase == 1 and self._step % 5 != 0:
-        #     return
-        self._changes.append((self._step, change))
+        self._changes.append((self._time, change))
 
     def run(self) -> Evaluation:
         """Measure the network's performance for analysis"""
         self.setup_transient()
-        for self._step in range(0, 2500):
+        t = self.durations[0]
+        while self._time < t:
             self.step_transient()
-            change = self.grade_transient(self._step)
-            self._track_change(change, 0)
+            change = self.grade_transient()
+            self._track_change(change)
+            self._time += self.dt
 
         self.setup_evaluation()
-        for self._step in range(2500, 3000):
+        t += self.durations[1]
+        while self._time < t:
             self.step_evaluation()
-            change = self.grade_evaluation(self._step)
-            self._track_change(change, 1)
+            change = self.grade_evaluation()
+            self._track_change(change)
+            self._time += self.dt
 
         return self._changes
+
+    def log(self) -> Evaluation:
+        """Measure the network's performance for analysis"""
+        self.setup_transient()
+        t = self.durations[0]
+        while self._time < t:
+            self.step_transient()
+            change = self.grade_transient()
+            self._track_change(change)
+            self._time += self.dt
+
+        self.setup_evaluation()
+        t += self.durations[1]
+        while self._time < t:
+            self.step_evaluation()
+            change = self.grade_evaluation()
+            self._track_change(change)
+            self._time += self.dt
+
+        return self._changes
+
+    def get_result(self) -> dict:
+        return {}
