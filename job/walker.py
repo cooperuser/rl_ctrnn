@@ -28,6 +28,7 @@ class Walker(object):
         self.mutation = mutation_size
         self.attempts: List[Pair] = []
         self.attempt = 0
+        self.best = 0
 
         self.run: Run = wandb.init(
             project=project,
@@ -45,11 +46,14 @@ class Walker(object):
 
     def log(self, ctrnn: Ctrnn, result: OscillatorResult):
         self.attempts.append(Pair(ctrnn, result))
+        if result.fitness >= self.attempts[self.best].fitness:
+            self.best = self.attempt
         self.run.log(
             {
                 "ctrnn": Ctrnn.to_dict(ctrnn),
                 "fitness": result.fitness,
                 "variance": result.variance,
+                "best_fitness": self.attempts[self.best].fitness,
             }
         )
 

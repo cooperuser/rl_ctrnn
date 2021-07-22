@@ -53,6 +53,7 @@ class Climber(object):
                 "ctrnn": Ctrnn.to_dict(ctrnn),
                 "fitness": result.fitness,
                 "variance": result.variance,
+                "best_fitness": self.attempts[self.best].fitness,
             }
         )
 
