@@ -1,26 +1,23 @@
 from collections import deque
-from typing import Tuple
-
-
-class Grade(object):
-    def __add__(self, other):
-        pass
-
-    def __sub__(self, other):
-        pass
 
 
 class Behavior(object):
-    def __init__(self, size: int, durations: Tuple[int, int] = (25, 5)):
-        self._time = 0.0
-
-        self.dt = 0.05
+    def __init__(
+        self,
+        dt: float = 0.05,
+        size: int = 2,
+        window: float = 30.0,
+        duration: float = 120.0,
+    ):
+        self.dt = dt
         self.size = size
-        self.durations = durations
-        self.history: deque[Grade] = deque()
+        self.window = window
+        self.duration = duration
+        self.history: deque[float] = deque()
+        self.time = 0.0
 
     def setup(self):
         pass
 
-    def grade(self, state) -> Grade:
-        return Grade()
+    def grade(self, state) -> float:
+        return 0.0
