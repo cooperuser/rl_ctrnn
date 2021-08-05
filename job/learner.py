@@ -50,7 +50,7 @@ class Learner(object):
         )
 
     def calculate_reward(self, outputs: Array) -> float:
-        self.behavior.grade(outputs)  # - 0.1 * self.behavior.dt
+        self.behavior.grade(outputs) - 0.1 * self.behavior.dt
         self.performance = self.behavior.history[-1] - self.behavior.history[0]
 
         old = self.performances.popleft()
