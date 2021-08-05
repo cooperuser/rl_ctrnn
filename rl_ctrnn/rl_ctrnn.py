@@ -33,7 +33,7 @@ class RLCtrnn(object):
         self.rng = np.random.default_rng(seed)
 
         shape = (ctrnn.size, ctrnn.size)
-        self.flux: float = 0
+        self.flux: float = 5
         self.center = self.ctrnn.weights
         self.period = np.random.uniform(
             self.bounds.period.min, self.bounds.period.max, size=shape
