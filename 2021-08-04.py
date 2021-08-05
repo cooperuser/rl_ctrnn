@@ -39,8 +39,8 @@ WEIGHTS_OPTIMAL: np.ndarray = Ctrnn.from_dict(OPTIMAL).weights
 def init_run(job: str, seed: int, mut: float = MUTATION_SIZE) -> Run:
     return wandb.init(
         project=PROJECT,
-        group=GROUP,
-        job_type=job,
+        job_type=GROUP,
+        group=job,
         config={
             "optimal": OPTIMAL,
             "progenitor": PROGENITOR,
