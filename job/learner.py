@@ -67,13 +67,13 @@ class Learner(object):
     def iter(self, log=True):
         self.voltages = self.rlctrnn.step(self.voltages)
         outputs = self.rlctrnn.ctrnn.get_output(self.voltages)
-        reward = self.calculate_reward(outputs)
+        self.reward = self.calculate_reward(outputs)
 
         if log:
             data = {}
             data["fitness"] = self.behavior.fitness
             data["performance"] = self.performance
-            data["reward"] = reward
+            data["reward"] = self.reward
             data["flux"] = self.rlctrnn.flux
             data["Time"] = self.behavior.time
             data["displacement"] = self.calculate_displacement()
@@ -83,7 +83,7 @@ class Learner(object):
                     data[f"weight.{x}.{y}"] = self.rlctrnn.center[x, y]
             self.run.log(data)
 
-            self.rlctrnn.update(reward)
+            self.rlctrnn.update(self.reward)
 
 
 def main():

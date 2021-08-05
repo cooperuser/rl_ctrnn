@@ -1,71 +1,47 @@
-import wandb
-from util.run import Run
-import numpy as np
-from evaluator.oscillator import Oscillator, OscillatorResult
+from typing_extensions import TypeAlias
+from behavior.oscillator import Oscillator
+from typing import List, Tuple
 from rl_ctrnn.ctrnn import Ctrnn
 
-from job import *
 
-
-class Pair:
-    def __init__(self, ctrnn: Ctrnn, result: OscillatorResult):
-        self.ctrnn = ctrnn
-        self.fitness = result.fitness
-        self.variance = result.variance
+Pair: TypeAlias = Tuple[Ctrnn, float]
+# class Pair:
+#     def __init__(self, ctrnn: Ctrnn, fitness: float):
+#         self.ctrnn = ctrnn
+#         self.fitness = fitness
 
 
 class Climber(object):
     def __init__(
-        self,
-        project: str,
-        group: str,
-        ctrnn: Ctrnn,
-        seed: int = 0,
-        mutation_size: float = 0.1,
+        self, ctrnn: Ctrnn, seed: int = 0, mutation: float = 0.05, dt: float = 0.01
     ):
         self.seed = seed
         self.progenitor = ctrnn
-        self.mutation = mutation_size
+        self.mutation = mutation
         self.attempts: List[Pair] = []
         self.attempt = 0
         self.best = 0
-
-        self.run: Run = wandb.init(
-            project=project,
-            group=group,
-            job_type="climber",
-            config={
-                "seed": self.seed,
-                "mutation_size": mutation_size,
-                "progenitor": Ctrnn.to_dict(self.progenitor),
-            },
-        )
-
-        np.random.seed(self.seed)
-        self.setup()
-
-    def log(self, ctrnn: Ctrnn, result: OscillatorResult):
-        self.attempts.append(Pair(ctrnn, result))
-        if result.fitness >= self.attempts[self.best].fitness:
-            self.best = self.attempt
-        self.run.log(
-            {
-                "ctrnn": Ctrnn.to_dict(ctrnn),
-                "fitness": result.fitness,
-                "variance": result.variance,
-                "best_fitness": self.attempts[self.best].fitness,
-            }
-        )
+        self.dt = dt
 
     def setup(self):
-        o = Oscillator(self.progenitor)
-        o.run()
-        self.log(self.progenitor, o.get_result())
+        behavior = Oscillator(dt=self.dt, size=self.progenitor.size)
+        voltages = self.progenitor.make_instance()
+        behavior.setup(self.progenitor.get_output(voltages))
+        while behavior.time < behavior.duration:
+            voltages = self.progenitor.step(self.dt, voltages)
+            behavior.grade(self.progenitor.get_output(voltages))
+        self.attempts.append((self.progenitor, behavior.fitness))
 
     def iter(self):
         self.attempt += 1
         parent = self.attempts[self.best]
-        ctrnn = Ctrnn.from_dict(Ctrnn.to_dict(parent.ctrnn), self.mutation)
-        o = Oscillator(ctrnn)
-        o.run()
-        self.log(ctrnn, o.get_result())
+        ctrnn = Ctrnn.from_dict(Ctrnn.to_dict(parent[0]), self.mutation)
+        behavior = Oscillator(dt=self.dt, size=ctrnn.size)
+        voltages = ctrnn.make_instance()
+        behavior.setup(ctrnn.get_output(voltages))
+        while behavior.time < behavior.duration:
+            voltages = ctrnn.step(self.dt, voltages)
+            behavior.grade(ctrnn.get_output(voltages))
+        self.attempts.append((ctrnn, behavior.fitness))
+        if behavior.fitness >= self.attempts[self.best][1]:
+            self.best = self.attempt
