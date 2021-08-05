@@ -49,11 +49,10 @@ class RLCtrnn(object):
         self.flux -= self.flux_conv_rate * self.max_flux_amp * reward
         self.flux = np.clip(self.flux, 0, self.max_flux_amp)
         displacement = self.flux * np.sin(2 * np.pi * self.time / self.period)
-        self.center += self.learn_rate * displacement * reward
-        c = self.bounds.center
-        clipped = self.center.clip(c.min, c.max)
-        self.distance += np.sqrt(np.sum(np.power(clipped + -self.center, 2)))
-        self.center = clipped
+        center = self.center + self.learn_rate * displacement * reward
+        center = center.clip(self.bounds.center.min, self.bounds.center.max)
+        self.distance += np.sqrt(np.sum(np.power(center + -self.center, 2)))
+        self.center = center
 
     def step(self, voltages: Array = np.empty(0), dt: float = 0.05):
         size = self.ctrnn.size
