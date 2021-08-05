@@ -2,13 +2,9 @@ from typing_extensions import TypeAlias
 from behavior.oscillator import Oscillator
 from typing import List, Tuple
 from rl_ctrnn.ctrnn import Ctrnn
-
+import numpy as np
 
 Pair: TypeAlias = Tuple[Ctrnn, float]
-# class Pair:
-#     def __init__(self, ctrnn: Ctrnn, fitness: float):
-#         self.ctrnn = ctrnn
-#         self.fitness = fitness
 
 
 class Walker(object):
@@ -22,6 +18,7 @@ class Walker(object):
         self.attempt = 0
         self.best = 0
         self.dt = dt
+        np.random.seed(self.seed)
 
     def setup(self):
         behavior = Oscillator(dt=self.dt, size=self.progenitor.size)
