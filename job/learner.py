@@ -2,21 +2,13 @@ from collections import deque
 from multiprocessing.context import Process
 from random import randint
 from rl_ctrnn.rl_ctrnn import RLCtrnn
-from util.run import Run
 from behavior.oscillator import Oscillator
 from rl_ctrnn.ctrnn import Array, Ctrnn
 import numpy as np
-import wandb
 
 
 class Learner(object):
-    def __init__(
-        self,
-        project: str,
-        group: str,
-        ctrnn: Ctrnn,
-        seed: int = 0,
-    ):
+    def __init__(self, ctrnn: Ctrnn, seed: int = 0):
         self.seed = seed
         self.progenitor = ctrnn
         self.behavior = Oscillator(size=self.progenitor.size)
@@ -39,18 +31,8 @@ class Learner(object):
         self.fitness = 0
         self.last_fitness = 0
 
-        self.run: Run = wandb.init(
-            project=project,
-            group=group,
-            job_type="learner",
-            config={
-                "seed": self.seed,
-                "progenitor": prog,
-            },
-        )
-
     def calculate_reward(self, outputs: Array) -> float:
-        self.behavior.grade(outputs) - 0.1 * self.behavior.dt
+        self.behavior.grade(outputs) - 0.5 * self.behavior.dt
         self.performance = self.behavior.history[-1] - self.behavior.history[0]
 
         old = self.performances.popleft()
@@ -64,26 +46,11 @@ class Learner(object):
         flat_weights: np.ndarray = self.progenitor.weights
         return np.sqrt(np.sum(np.power(flat_center + -flat_weights, 2)))
 
-    def iter(self, log=True):
+    def iter(self):
         self.voltages = self.rlctrnn.step(self.voltages)
         outputs = self.rlctrnn.ctrnn.get_output(self.voltages)
         self.reward = self.calculate_reward(outputs)
-
-        if log:
-            data = {}
-            data["fitness"] = self.behavior.fitness
-            data["performance"] = self.performance
-            data["reward"] = self.reward
-            data["flux"] = self.rlctrnn.flux
-            data["Time"] = self.behavior.time
-            data["displacement"] = self.calculate_displacement()
-            data["distance"] = self.rlctrnn.distance
-            for y in range(self.rlctrnn.ctrnn.size):
-                for x in range(self.rlctrnn.ctrnn.size):
-                    data[f"weight.{x}.{y}"] = self.rlctrnn.center[x, y]
-            self.run.log(data)
-
-            self.rlctrnn.update(self.reward)
+        self.rlctrnn.update(self.reward)
 
 
 def main():
@@ -97,15 +64,14 @@ def main():
             },
         }
     )
-    learner = Learner("fit-test", "", ctrnn, seed=randint(1, 10000))
+    learner = Learner(ctrnn, seed=randint(1, 10000))
 
-    # while learner.behavior.time < learner.behavior.window:
-    #     learner.iter(False)
-    # learner.behavior.time = 0
+    while learner.behavior.time < learner.behavior.window:
+        learner.iter()
+    learner.behavior.time = 0
 
     while learner.behavior.time < learner.behavior.duration:
         learner.iter()
-    learner.run.finish()
 
 
 if __name__ == "__main__":
