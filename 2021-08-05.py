@@ -9,8 +9,8 @@ import numpy as np
 import wandb
 
 
-PROJECT = "2021-08-05"
-GROUP = "50"
+PROJECT = "temporary"
+GROUP = "60"
 TIMESTEP = 0.01
 MUTATION_SIZE = 0.05
 ITERATIONS = 120
@@ -115,7 +115,12 @@ def climber(seed: int):
 def learner(seed: int):
     run = init_run("learner", seed, 0.0)
     progenitor = Ctrnn.from_dict(PROGENITOR)
-    m = Learner("", "", progenitor, seed)
+    m = Learner(progenitor, seed)
+
+    while m.behavior.time < m.behavior.window:
+        m.iter()
+    m.behavior.time = 0.0
+
     while m.behavior.time < m.behavior.duration:
         m.iter()
         data = {"Time": m.behavior.time}
@@ -148,7 +153,7 @@ def main(job):
 
 
 if __name__ == "__main__":
-    for _ in range(5):
-        main(walker)
-        main(climber)
+    for _ in range(1):
+        # main(walker)
+        # main(climber)
         main(learner)

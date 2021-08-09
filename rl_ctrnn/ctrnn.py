@@ -2,7 +2,6 @@ from typing_extensions import TypeAlias
 import numpy as np
 
 from .ranges import Range, CtrnnRanges
-from rl_ctrnn import ranges
 
 Array: TypeAlias = np.ndarray
 

@@ -1,10 +1,5 @@
-from collections import deque
-from rl_ctrnn import ranges
-from typing import Generic, TypeVar
 from typing_extensions import TypeAlias
-from time import sleep
 
-import wandb
 from rl_ctrnn.ctrnn import Ctrnn
 import numpy as np
 import numpy.typing as npt
@@ -46,6 +41,7 @@ class RLCtrnn(object):
         self.distance = 0.0
 
     def update(self, reward: float = 0):
+        """Tweak the weights of the network using a reward value"""
         self.flux -= self.flux_conv_rate * self.max_flux_amp * reward
         self.flux = np.clip(self.flux, 0, self.max_flux_amp)
         displacement = self.flux * np.sin(2 * np.pi * self.time / self.period)
@@ -55,6 +51,7 @@ class RLCtrnn(object):
         self.center = center
 
     def step(self, voltages: Array = np.empty(0), dt: float = 0.05):
+        """Wrapper around normal Ctrnn.step method that sets weights using centers, periods, and flux"""
         size = self.ctrnn.size
         self.time += dt
         time = self.time.flat
@@ -67,47 +64,3 @@ class RLCtrnn(object):
         displacement = self.flux * np.sin(2 * np.pi * self.time / self.period)
         self.ctrnn.weights = self.center + displacement
         return self.ctrnn.step(dt, voltages)
-
-
-if __name__ == "__main__":
-    run = wandb.init(project="rl_rule")
-    seed = int(np.random.random() * 10000)
-    r = RLCtrnn(Ctrnn(2), seed)
-    r.ctrnn.set_bias(0, -2.75)
-    r.ctrnn.set_bias(1, -1.75)
-    voltages = r.ctrnn.make_instance()
-    last: Array = np.array(2)
-    duration = int(5 / 0.05)
-    history = deque([0 for _ in range(duration)])
-    time = 0
-    try:
-        for _ in range(10000):
-            voltages = r.step(voltages)
-            outputs: Array = r.ctrnn.get_output(voltages)
-            history.popleft()
-            newest = np.sum(np.abs(outputs + -last))
-            history.append(newest)
-            last = outputs
-
-            fitness = np.mean(history)
-            reward = newest - fitness
-            # print()
-            # print(outputs)
-            # print(fitness, reward)
-            d = {}
-            d["a"] = outputs[0]
-            d["b"] = outputs[1]
-            d["fitness"] = np.sum(history) / (2 * duration * 0.05)
-            d["reward"] = reward
-            d["flux"] = r.flux
-            for y in range(r.ctrnn.size):
-                for x in range(r.ctrnn.size):
-                    d[f"center.{x}.{y}"] = r.center[x, y]
-                    d[f"weight.{x}.{y}"] = r.ctrnn.weights[x, y]
-            run.log(d)
-            r.update(reward)
-            time += 0.05
-    except KeyboardInterrupt:
-        exit(0)
-    finally:
-        run.finish()

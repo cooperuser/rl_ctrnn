@@ -17,19 +17,12 @@ class Learner(object):
         self.voltages = self.rlctrnn.ctrnn.make_instance()
         self.behavior.setup(self.rlctrnn.ctrnn.get_output(self.voltages))
 
-        avg_count = self.behavior.avg_count
         self.performances = deque([0.0 for _ in range(20)])
-        self.rewards = deque([0.0 for _ in range(avg_count)])
-        self.fitness = 0
-        self.total_performance = 0
-        self.total_reward = 0
         self.window = self.behavior.window
 
         self.performance = 0
-        self.last_performance = 0
         self.avg_performance = 0
         self.fitness = 0
-        self.last_fitness = 0
 
     def calculate_reward(self, outputs: Array) -> float:
         self.behavior.grade(outputs) - 0.5 * self.behavior.dt
