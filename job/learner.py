@@ -24,15 +24,15 @@ class Learner(object):
         self.avg_performance = 0
         self.fitness = 0
 
+        self.factor = 0.001  # TODO: better name
+
     def calculate_reward(self, outputs: Array) -> float:
-        self.behavior.grade(outputs) - 0.5 * self.behavior.dt
-        self.performance = self.behavior.history[-1] - self.behavior.history[0]
+        change = self.behavior.grade(outputs) - 0.6 * self.behavior.dt
+        reward = change - self.performance
 
-        old = self.performances.popleft()
-        self.performances.append(self.performance)
-        self.avg_performance += (self.performance - old) / len(self.performances)
-
-        return self.avg_performance
+        self.performance *= 1 - self.factor
+        self.performance += change * self.factor
+        return reward
 
     def calculate_displacement(self) -> float:
         flat_center: np.ndarray = self.rlctrnn.center
@@ -40,10 +40,17 @@ class Learner(object):
         return np.sqrt(np.sum(np.power(flat_center + -flat_weights, 2)))
 
     def iter(self):
-        self.voltages = self.rlctrnn.step(self.voltages)
+        self.voltages = self.rlctrnn.step(self.voltages, 0.01)  # TODO: fix everywhere
         outputs = self.rlctrnn.ctrnn.get_output(self.voltages)
         self.reward = self.calculate_reward(outputs)
         self.rlctrnn.update(self.reward)
+
+    def is_running(self) -> bool:
+        if self.rlctrnn.flux < 0.01:
+            return False
+        if self.behavior.time < self.behavior.duration:
+            return True
+        return False
 
 
 def main():

@@ -20,4 +20,4 @@ class Oscillator(Behavior):
         change = (grade - old) / self.window
         self.fitness += change
         self.time += self.dt
-        return change
+        return grade

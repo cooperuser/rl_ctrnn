@@ -30,9 +30,10 @@ class RLCtrnn(object):
         shape = (ctrnn.size, ctrnn.size)
         self.flux: float = 1
         self.center = self.ctrnn.weights
-        self.period = np.random.uniform(
+        self.period = self.rng.uniform(
             self.bounds.period.min, self.bounds.period.max, size=shape
         )
+        self.period = np.round(self.period * 10) / 10
         self.time: Datum = np.zeros(shape)
 
         self.flux_conv_rate = 0.1
