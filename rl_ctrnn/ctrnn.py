@@ -1,4 +1,6 @@
 from typing_extensions import TypeAlias
+from copy import deepcopy
+from numpy.random import Generator
 import numpy as np
 
 from .ranges import Range, CtrnnRanges
@@ -90,6 +92,16 @@ class Ctrnn(object):
 
     def get_output(self, voltages: Array):
         return sigmoid(voltages + self.biases)
+
+    def clone(self, change: float = 0, rng: Generator = None) -> "Ctrnn":
+        ctrnn = deepcopy(self)
+        if change and rng:
+            w = self.ranges.weights
+            direction = rng.uniform(-1, 1, size=(self.size, self.size))
+            magnitude = np.sqrt(np.sum(np.power(direction.flat, 2))) or 1
+            direction *= rng.uniform(0, change) / magnitude
+            ctrnn.weights = (ctrnn.weights + direction).clip(w.min, w.max)
+        return ctrnn
 
     @staticmethod
     def from_dict(d: dict, change: float = 0) -> "Ctrnn":

@@ -13,7 +13,7 @@ class Oscillator(Behavior):
         self.last = state
 
     def grade(self, state: np.ndarray) -> float:
-        grade = np.sum(np.abs(state + -self.last)) / self.size
+        grade = np.sum(np.abs(state + -self.last)) / len(state)
         self.last = state
         old = self.history.popleft()
         self.history.append(grade)

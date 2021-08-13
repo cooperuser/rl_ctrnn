@@ -1,4 +1,5 @@
 from multiprocessing.context import Process
+from numpy import floor
 import wandb
 from behavior.oscillator import Oscillator
 from job.learner import Learner
@@ -27,8 +28,7 @@ def get_frozen(ctrnn: Ctrnn) -> float:
     return behavior.fitness
 
 def get_log_data(m: Learner) -> dict:
-    data = {"Time": m.behavior.time}
-    data["fitness"] = m.behavior.fitness
+    data = {"Time": floor(m.behavior.time)}
     data["distance"] = m.rlctrnn.distance
     data["displacement"] = m.calculate_displacement()
     # d_b = calculate_displacement(m.rlctrnn.center, WEIGHTS_OPTIMAL)
@@ -47,11 +47,10 @@ def get_log_data(m: Learner) -> dict:
 
 def main(seed):
     progenitor = Ctrnn.from_dict(PROGENITOR)
-    initial_fitness = get_frozen(progenitor)
+    PROGENITOR["fitness"] = get_frozen(progenitor)
 
-    run = wandb.init(project="temporary", config={
+    run = wandb.init(project="temporary2", config={
         "progenitor": PROGENITOR,
-        "initial_fitness": initial_fitness,
         "seed": seed,
     })
 
@@ -60,13 +59,16 @@ def main(seed):
     m.behavior.duration = 100
     m.behavior.window = 10
 
+    time = -1
     while m.is_running():
         m.iter()
-        data = get_log_data(m)
-        run.log(data)
+        t = floor(m.behavior.time)
+        if t != time:
+            time = t
+            data = get_log_data(m)
+            run.log(data)
 
-    final_fitness = get_frozen(m.rlctrnn.ctrnn)
-    run.summary["final_fitness"] = final_fitness
+    run.summary["fitness"] = get_frozen(m.rlctrnn.ctrnn)
     run.finish()
 
 
