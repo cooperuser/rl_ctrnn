@@ -1,3 +1,4 @@
+from typing import Mapping
 from typing_extensions import TypeAlias
 from copy import deepcopy
 from numpy.random import Generator
@@ -18,7 +19,7 @@ def sigmoid(z: Array) -> Array:
     return 1.0 / (1 + np.exp(-z))
 
 
-class Ctrnn(object):
+class Ctrnn(Mapping):
     def __init__(self, size: int = 2):
         self.size = size
         self.reset()
@@ -99,9 +100,26 @@ class Ctrnn(object):
             w = self.ranges.weights
             direction = rng.uniform(-1, 1, size=(self.size, self.size))
             magnitude = np.sqrt(np.sum(np.power(direction.flat, 2))) or 1
-            direction *= rng.uniform(0, change) / magnitude
+            direction *= rng.uniform(0, change * w.max) / magnitude
             ctrnn.weights = (ctrnn.weights + direction).clip(w.min, w.max)
         return ctrnn
+
+    def __iter__(self):
+        return Ctrnn.to_dict(self).items().__iter__()
+
+    def __getitem__(self, item):
+        e, c = (enumerate, self)
+        if item == "size":
+            return self.size
+        if item == "biases":
+            return {n: b for n, b in e(c.biases)}
+        if item == "time_constants":
+            return {n: t for n, t in e(c.time_constants)}
+        if item == "weights":
+            return {a: {b: w for b, w in e(ws)} for a, ws in e(c.weights)}
+
+    def __len__(self) -> int:
+        return super().__len__()
 
     @staticmethod
     def from_dict(d: dict, change: float = 0) -> "Ctrnn":
@@ -120,6 +138,7 @@ class Ctrnn(object):
         e = enumerate
         c = ctrnn
         return {
+            "size": c.size,
             "biases": {n: b for n, b in e(c.biases)},
             "time_constants": {n: t for n, t in e(c.time_constants)},
             "weights": {a: {b: w for b, w in e(ws)} for a, ws in e(c.weights)},

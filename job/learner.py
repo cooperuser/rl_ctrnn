@@ -8,9 +8,17 @@ import numpy as np
 
 
 class Learner(object):
-    def __init__(self, ctrnn: Ctrnn, seed: int = 0):
+    def __init__(
+        self,
+        ctrnn: Ctrnn,
+        seed: int = 0,
+        reward_ratio: float = 0.8,
+        smoothness: float = 0.005,
+    ):
         self.seed = seed
         self.progenitor = ctrnn
+        self.reward_ratio = reward_ratio
+        self.smoothness = smoothness
         self.behavior = Oscillator(size=self.progenitor.size)
         prog = Ctrnn.to_dict(ctrnn)
         self.rlctrnn = RLCtrnn(Ctrnn.from_dict(prog), self.seed)
@@ -24,14 +32,12 @@ class Learner(object):
         self.avg_performance = 0
         self.fitness = 0
 
-        self.factor = 0.001  # TODO: better name
-
     def calculate_reward(self, outputs: Array) -> float:
-        change = self.behavior.grade(outputs) - 0.6 * self.behavior.dt
+        change = self.behavior.grade(outputs) - self.reward_ratio * self.behavior.dt
         reward = change - self.performance
 
-        self.performance *= 1 - self.factor
-        self.performance += change * self.factor
+        self.performance *= 1 - self.smoothness
+        self.performance += change * self.smoothness
         return reward
 
     def calculate_displacement(self) -> float:

@@ -28,9 +28,10 @@ class NClimber(object):
         self.duration = duration
         self.samples = samples
         self.rng = np.random.default_rng(self.seed)
+        self.time = 0
 
     def new_behavior(self, state: np.ndarray) -> Oscillator:
-        b = Oscillator(self.dt, duration=self.duration, window=self.duration / 6)
+        b = Oscillator(self.dt, duration=self.duration, window=self.duration * 3 / 4)
         b.setup(state)
         return b
 
@@ -46,18 +47,17 @@ class NClimber(object):
         self.attempt += 1
         parent = self.attempts[self.best][0]
         s = lambda: self.sample(parent)
-        samples = {k: v for (k, v) in [s() for _ in range(self.samples)]}
-        best = max(samples, key=lambda s: samples[s])
-        fitness = samples[best]
-        self.attempts.append((best, fitness))
+        fitness, ctrnn = max([s() for _ in range(self.samples)])
+        self.attempts.append((ctrnn, fitness))
         if fitness >= self.attempts[self.best][1]:
             self.best = self.attempt
+        self.time += self.dt
 
-    def sample(self, parent: Ctrnn) -> Tuple[Ctrnn, float]:
+    def sample(self, parent: Ctrnn) -> Tuple[float, Ctrnn]:
         ctrnn = parent.clone(self.mutation, self.rng)
         voltages = ctrnn.make_instance()
         behavior = self.new_behavior(ctrnn.get_output(voltages))
         while behavior.time < behavior.duration:
             voltages = ctrnn.step(self.dt, voltages)
             behavior.grade(ctrnn.get_output(voltages))
-        return ctrnn, behavior.fitness
+        return behavior.fitness, ctrnn
