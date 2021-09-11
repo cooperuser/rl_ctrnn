@@ -13,6 +13,7 @@ Config:
     initial_fitness
     target_percent
     technique
+    wall_time
 
 History metrics:
     weights
@@ -28,6 +29,7 @@ Summary metrics:
 """
 
 from concurrent.futures import ProcessPoolExecutor as Pool
+from rl_ctrnn.ctrnn import Ctrnn
 from typing import List
 
 from util import MetaParameters
@@ -40,13 +42,13 @@ import numpy as np
 import wandb
 
 THREAD_COUNT = 10
-PROJECT = ""
+PROJECT = "rl_vs_hc"
+DELTA_TIME = 0.01
+WINDOW = 10
 META = {
     "batch": list(range(1)),
     "perturbed": [],
-    "dt": 0.01,
-    "wall_time": 1000,
-    "window": 10,
+    "wall_time": [100, 1000],
     "technique": [
         {"name": "rl", "args": {}},
         {"name": "hc", "args": {"mutation_size": 0.25}},
@@ -57,16 +59,38 @@ META = {
 class Meta(MetaParameters):
     technique: dict
     perturbed: Perturbed
-    dt: float
-    wall_time: float
-    window: float
+    wall_time: int
+
+    def init_run(self) -> Run:
+        config = self.perturbed.__dict__.copy()
+        config["ctrnn"] = Ctrnn.to_dict(config["ctrnn"])
+        config["progenitor"] = Ctrnn.to_dict(config["progenitor"])
+        config["technique"] = self.technique["name"]
+        config["initial_fitness"] = config["fitness"]
+        config["wall_time"] = self.wall_time
+        del config["fitness"]
+        del config["actual_percent"]
+        return wandb.init(
+            project=PROJECT,
+            group="progenitor_seed",
+            job_type="technique",
+            config=config,
+        )
+
+
+def run_rl(args: Meta):
+    pass
+
+
+def run_hc(args: Meta):
+    pass
 
 
 def main(args: Meta):
     if args.technique["name"] == "rl":
-        pass
+        run_rl(args)
     elif args.technique["name"] == "hc":
-        pass
+        run_hc(args)
     elif args.technique["name"] == "rw":
         pass
 
@@ -74,6 +98,6 @@ def main(args: Meta):
 if __name__ == "__main__":
     META["perturbed"] = get_perturbed_runs()
     meta = list(map(Meta, Meta.get(META)))
-    print(meta[0])
+    meta[0].init_run()
     # p = Pool(THREAD_COUNT)
     # p.map(main, [])
