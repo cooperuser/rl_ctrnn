@@ -12,8 +12,8 @@ class Learner(object):
         self,
         ctrnn: Ctrnn,
         seed: int = 0,
-        reward_ratio: float = 0.8,
-        smoothness: float = 0.005,
+        reward_ratio: float = 0.6,
+        smoothness: float = 0.001,
     ):
         self.seed = seed
         self.progenitor = ctrnn
