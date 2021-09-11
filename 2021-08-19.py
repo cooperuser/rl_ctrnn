@@ -88,7 +88,6 @@ def hill_climber(args: Meta):
 
 
 if __name__ == "__main__":
-    threads = []
     meta = list(map(Meta, Meta.get(META)))
     p = Pool(THREAD_COUNT)
     p.map(hill_climber, meta)

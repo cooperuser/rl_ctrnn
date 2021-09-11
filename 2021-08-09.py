@@ -49,7 +49,7 @@ def main(seed):
     progenitor = Ctrnn.from_dict(PROGENITOR)
     PROGENITOR["fitness"] = get_frozen(progenitor)
 
-    run = wandb.init(project="temporary2", config={
+    run = wandb.init(project="temporary3", config={
         "progenitor": PROGENITOR,
         "seed": seed,
     })
@@ -73,7 +73,7 @@ def main(seed):
 
 
 if __name__ == "__main__":
-    for _ in range(9):
+    for _ in range(1):
         threads = []
         for _ in range(THREAD_COUNT):
             seed = randint(1, 100000)

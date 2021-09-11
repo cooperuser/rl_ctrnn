@@ -40,7 +40,7 @@ def part_a(samples: int = 1, seed: int = 0):
     progenitor = Ctrnn.from_dict(PROGENITOR)
     run: Run = wandb.init(
         project="nclimber",
-        group="a",
+        group="a2",
         job_type=fmt(samples),
         config={"samples": samples, "seed": seed},
     )
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         threads = []
         seed = randint(11, 50000)
         for i in [0.05, 0.1, 0.5, 1, 2, 3, 4, 5]:
-            threads.append(Process(target=part_f, args=(i, seed)))
+            threads.append(Process(target=part_a, args=(i, seed)))
         for _, p in enumerate(threads):
             p.start()
         for _, p in enumerate(threads):
