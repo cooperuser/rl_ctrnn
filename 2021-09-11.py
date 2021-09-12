@@ -30,14 +30,14 @@ Summary metrics:
 
 from concurrent.futures import ProcessPoolExecutor as Pool
 from rl_ctrnn.ctrnn import Ctrnn
-# from typing import List
 
 from util import MetaParameters, get_distance, get_beers_fitness
 from util.perturbed import Perturbed, get_perturbed_runs
 from util.run import Run
 
 from job.learner import Learner
-# from job.nclimber import NClimber
+from job.nclimber import NClimber
+
 import numpy as np
 import wandb
 
@@ -47,12 +47,12 @@ PROJECT = "rl_vs_hc"
 DELTA_TIME = 0.01
 WINDOW = 10
 META = {
-    "batch": list(range(10)),
+    "batch": list(range(1)),
     "perturbed": [],
     "wall_time": [1000],
     "technique": [
-        {"name": "rl", "args": {}},
-        # {"name": "hc", "args": {"mutation_size": 0.25}},
+        # {"name": "rl", "args": {}},
+        {"name": "hc", "args": {"mutation_size": 0.25}},
     ],
 }
 
@@ -122,7 +122,51 @@ def run_rl(args: Meta):
 
 
 def run_hc(args: Meta):
-    pass
+    run = args.init_run()
+
+    m = NClimber(
+        ctrnn=args.perturbed.ctrnn,
+        seed=args.seed,
+        mutation=args.technique["args"]["mutation_size"],
+        duration=WINDOW,
+        dt=DELTA_TIME,
+    )
+    m.setup()
+
+    distance = 0
+    def log(time: float):
+        e, c = (enumerate, m.attempts[m.best][0])
+        weights = {a: {b: w for b, w in e(ws)} for a, ws in e(c.weights)}
+        run.log(
+            {
+                "Time": time,
+                "weights": weights,
+                "distance_traveled": distance,
+                "displacement": {
+                    "start": get_distance(
+                        c.weights, args.perturbed.ctrnn.weights
+                    ),
+                    "progenitor": get_distance(
+                        c.weights, args.perturbed.progenitor.weights
+                    ),
+                },
+            }
+        )
+
+    log(0)
+    time = -1
+    while time < args.wall_time:
+        a = m.attempts[m.best][0].weights
+        m.single_step()
+        b = m.attempts[m.best][0].weights
+        distance += get_distance(a, b)
+        time += m.duration * m.samples
+        log(time)
+
+    fitness = get_beers_fitness(m.attempts[m.best][0])
+    run.summary["final_fitness"] = fitness
+    run.summary["fitness_ratio"] = fitness / args.perturbed.progenitor_fitness
+    run.finish()
 
 
 def main(args: Meta):
@@ -138,6 +182,5 @@ if __name__ == "__main__":
     META["perturbed"] = get_perturbed_runs()
     meta = list(map(Meta, Meta.get(META)))
     print(len(meta))
-    # main(meta[0])
     p = Pool(THREAD_COUNT)
     p.map(main, meta)
