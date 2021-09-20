@@ -1,4 +1,3 @@
-from random import sample
 from typing_extensions import TypeAlias
 from behavior.oscillator import Oscillator
 from typing import List, Tuple
@@ -46,17 +45,15 @@ class NWalker(object):
         self.attempt += 1
         parent = self.attempts[-1][0]
         s = lambda: self.sample(parent)
-        samples = {k: v for (k, v) in [s() for _ in range(self.samples)]}
-        best = max(samples, key=lambda s: samples[s])
-        fitness = samples[best]
+        fitness, best = max([s() for _ in range(self.samples)])
         self.attempts.append((best, fitness))
         self.best = self.attempt
 
-    def sample(self, parent: Ctrnn) -> Tuple[Ctrnn, float]:
+    def sample(self, parent: Ctrnn) -> Tuple[float, Ctrnn]:
         ctrnn = parent.clone(self.mutation, self.rng)
         voltages = ctrnn.make_instance()
         behavior = self.new_behavior(ctrnn.get_output(voltages))
         while behavior.time < behavior.duration:
             voltages = ctrnn.step(self.dt, voltages)
             behavior.grade(ctrnn.get_output(voltages))
-        return ctrnn, behavior.fitness
+        return behavior.fitness, ctrnn

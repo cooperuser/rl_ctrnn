@@ -1,4 +1,3 @@
-from random import sample
 from typing_extensions import TypeAlias
 from behavior.oscillator import Oscillator
 from typing import List, Tuple
