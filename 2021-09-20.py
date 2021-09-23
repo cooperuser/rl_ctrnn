@@ -109,10 +109,12 @@ def run_rl(args: Meta):
             l["best_fitness"] = best_fitness[0]
         run.log(flatdict(l))
 
-    log(time := 0)
+    time = 0
+    log(time)
     while time < m.behavior.duration:
         m.iter()
-        if time != (t := np.floor(m.behavior.time * 10) / 10):
+        t = np.floor(m.behavior.time * 10) / 10
+        if time != t:
             time = t
             log(t)
             if m.rlctrnn.flux < STOP_EARLY_THRESHOLD:
@@ -155,7 +157,8 @@ def run_hc(args: Meta, Type):
         }
         run.log(flatdict(l))
 
-    log(time := 0)
+    time = 0
+    log(time)
     while time < args.wall_time:
         a = m.attempts[m.best][0].weights
         m.single_step()
