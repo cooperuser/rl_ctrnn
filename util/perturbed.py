@@ -16,8 +16,8 @@ class Perturbed(object):
 
     def __init__(self, run: Run) -> None:
         config = run.config
-        self.ctrnn = Ctrnn.from_dict(config["ctrnn"])
-        self.progenitor = Ctrnn.from_dict(config["parent"])
+        self.ctrnn = Ctrnn.from_dict_legacy(config["ctrnn"])
+        self.progenitor = Ctrnn.from_dict_legacy(config["parent"])
         self.progenitor_seed = int(config["seed"])
         self.progenitor_mutation_size = float(config["mutation_size"])
         self.progenitor_fitness = float(config["parent_fitness"])
