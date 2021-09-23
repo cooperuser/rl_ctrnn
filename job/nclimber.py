@@ -30,7 +30,7 @@ class NClimber(object):
         self.time = 0
 
     def new_behavior(self, state: np.ndarray) -> Oscillator:
-        b = Oscillator(self.dt, duration=self.duration, window=self.duration * 3 / 4)
+        b = Oscillator(self.dt, duration=self.duration, window=self.duration)
         b.setup(state)
         return b
 
@@ -46,8 +46,8 @@ class NClimber(object):
         self.attempt += 1
         parent = self.attempts[self.best][0]
         s = lambda: self.sample(parent)
-        fitness, ctrnn = max([s() for _ in range(self.samples)])
-        self.attempts.append((ctrnn, fitness))
+        fitness, best = max([s() for _ in range(self.samples)])
+        self.attempts.append((best, fitness))
         if fitness >= self.attempts[self.best][1]:
             self.best = self.attempt
         self.time += self.dt

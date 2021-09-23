@@ -1,6 +1,7 @@
 from typing import Mapping
 from typing_extensions import TypeAlias
 from copy import deepcopy
+from .array_to_dict import array_to_dict
 from numpy.random import Generator
 import numpy as np
 
@@ -125,6 +126,18 @@ class Ctrnn(Mapping):
     def from_dict(d: dict, change: float = 0) -> "Ctrnn":
         ctrnn = Ctrnn(len(d["biases"]))
         for k, v in d["biases"].items():
+            ctrnn.set_bias(ord(k) - 97, v)
+        for k, v in d["time_constants"].items():
+            ctrnn.set_time_constant(ord(k) - 97, v)
+        for a, to in d["weights"].items():
+            for b, w in to.items():
+                ctrnn.set_weight(ord(a)-97, ord(b)-97, w + wiggle_room(change))
+        return ctrnn
+
+    @staticmethod
+    def from_dict_legacy(d: dict, change: float = 0) -> "Ctrnn":
+        ctrnn = Ctrnn(len(d["biases"]))
+        for k, v in d["biases"].items():
             ctrnn.set_bias(int(k), v)
         for k, v in d["time_constants"].items():
             ctrnn.set_time_constant(int(k), v)
@@ -135,13 +148,11 @@ class Ctrnn(Mapping):
 
     @staticmethod
     def to_dict(ctrnn: "Ctrnn") -> dict:
-        e = enumerate
-        c = ctrnn
         return {
-            "size": c.size,
-            "biases": {n: b for n, b in e(c.biases)},
-            "time_constants": {n: t for n, t in e(c.time_constants)},
-            "weights": {a: {b: w for b, w in e(ws)} for a, ws in e(c.weights)},
+            "size": ctrnn.size,
+            "biases": array_to_dict(ctrnn.biases),
+            "time_constants": array_to_dict(ctrnn.time_constants),
+            "weights": array_to_dict(ctrnn.weights),
         }
 
 

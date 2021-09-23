@@ -27,9 +27,10 @@ class NWalker(object):
         self.duration = duration
         self.samples = samples
         self.rng = np.random.default_rng(self.seed)
+        self.time = 0
 
     def new_behavior(self, state: np.ndarray) -> Oscillator:
-        b = Oscillator(self.dt, duration=self.duration, window=self.duration / 6)
+        b = Oscillator(self.dt, duration=self.duration, window=self.duration)
         b.setup(state)
         return b
 
@@ -47,7 +48,9 @@ class NWalker(object):
         s = lambda: self.sample(parent)
         fitness, best = max([s() for _ in range(self.samples)])
         self.attempts.append((best, fitness))
-        self.best = self.attempt
+        if fitness >= self.attempts[self.best][1]:
+            self.best = self.attempt
+        self.time += self.dt
 
     def sample(self, parent: Ctrnn) -> Tuple[float, Ctrnn]:
         ctrnn = parent.clone(self.mutation, self.rng)

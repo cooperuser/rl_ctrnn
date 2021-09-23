@@ -8,11 +8,12 @@ from behavior.oscillator import Oscillator
 from .run import Run
 from .seed import Seed
 import numpy as np
+from flatdict import FlatDict
 
 
-def get_beers_fitness(ctrnn: Ctrnn) -> float:
+def get_beers_fitness(ctrnn: Ctrnn, duration: float = 300, window: float = 50) -> float:
     voltages = ctrnn.make_instance()
-    behavior = Oscillator(dt=0.01, size=ctrnn.size, duration=250, window=50)
+    behavior = Oscillator(dt=0.01, size=ctrnn.size, duration=duration, window=window)
     behavior.setup(ctrnn.get_output(voltages))
     while behavior.time < behavior.duration:
         voltages = ctrnn.step(0.01, voltages)
@@ -59,3 +60,6 @@ class MetaParameters(Mapping):
         keys = list(meta.keys())
         values = list(itertools.product(*meta.values()))
         return [{keys[i]: v[i] for i in range(len(keys))} for v in values]
+
+def flatdict(d: dict) -> dict:
+    return dict(FlatDict(d, delimiter=':'))
